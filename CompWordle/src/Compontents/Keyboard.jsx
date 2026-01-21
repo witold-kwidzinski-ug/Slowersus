@@ -1,0 +1,90 @@
+import { useEffect, useRef, useState } from "react"
+
+
+export default function Keyboard({setWords, setLiveGuess}) {
+    
+    const answer = "SWEEP"
+
+    const [guess, setGuess] = useState("")
+
+    const [cansubmit, setCansubmit] = useState(false)
+
+
+    useEffect(() => {
+
+        function handler(e) {
+
+            setGuess(prev => {
+                if (e.key === "Enter" && prev.length === 5) {
+                    setCansubmit(true)
+                    return prev
+                }
+                if (e.key === "Backspace" && prev.length > 0) {
+                    return prev.slice(0, -1)
+                }
+                if (/^[a-zA-Z]$/.test(e.key) && prev.length < 5) {
+                    return prev + e.key.toUpperCase()
+                }
+                return prev
+            })
+        }
+
+        window.addEventListener("keydown", handler)
+        return () => window.removeEventListener("keydown", handler)
+
+    }, [])
+
+    useEffect(() => {
+        if (cansubmit) {
+            handleWord(guess)
+            setGuess("")
+            setCansubmit(false)
+        }
+    }, [cansubmit])
+
+    useEffect(() => {
+        setLiveGuess(guess)
+    }, [guess])
+
+    function handleWord(word) {
+        const final = Array(5).fill(null)
+
+        const answerobj = [...answer].reduce((acc, el) => {
+            if (!acc[el]) {
+                return {...acc, [el]: 1}
+            }
+            return {...acc, [el]: acc[el] + 1}
+
+        }, {})
+
+        for (let i = 0; i < 5; i++) {
+            const letter = word[i]
+            if (letter === answer[i]) {
+                final[i] = {letter, color: "lime"}
+                answerobj[letter]--
+            }
+        }
+
+        for (let i = 0; i < 5; i++) {
+            const letter = word[i]
+            if (final[i]) continue
+
+            if ([...answer].includes(letter) && answerobj[letter] > 0) {
+                final[i] = {letter, color: "gold"}
+                answerobj[letter]--
+                continue
+            }
+
+            final[i] = {letter, color: "gray"}
+
+        }
+
+        console.log("slowo!")
+        setWords(prev => [...prev, final])
+
+    }
+
+    return (
+        <></>
+    )
+}
