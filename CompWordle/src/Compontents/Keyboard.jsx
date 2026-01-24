@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
 
-export default function Keyboard({setWords, setLiveGuess}) {
-    
-    const answer = "SWEEP"
+export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
 
     const [guess, setGuess] = useState("")
 
@@ -79,8 +77,19 @@ export default function Keyboard({setWords, setLiveGuess}) {
 
         }
 
-        console.log("slowo!")
         setWords(prev => [...prev, final])
+        setLetters(prev => Object.keys(prev).reduce((acc, el) => {
+            if (!final.find(n => n.letter === el)) {
+                return {...acc, [el]: prev[el]}
+            }
+
+            if (prev[el] !== "whitesmoke" || prev[el] === "green") {
+                return {...acc, [el]: prev[el]}
+            }
+
+            return {...acc, [el]: final.find(n => n.letter === el).color}
+
+        }, {}))
 
     }
 
