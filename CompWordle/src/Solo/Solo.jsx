@@ -24,7 +24,6 @@ export default function Solo() {
         newWord()
         
     }, [])
-    console.log(letters)
 
     if (!answer) return <p>Loading</p>
 

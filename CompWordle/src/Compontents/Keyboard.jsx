@@ -33,11 +33,21 @@ export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
     }, [])
 
     useEffect(() => {
-        if (cansubmit) {
+        if (!cansubmit) return
+        async function submission() {
+            console.log("hi")
+            const valid = await fetch(`http://localhost:8000/validate/${guess.toLowerCase()}`).then(o => o.json())
+            setCansubmit(false)
+            console.log(valid)
+            if (!valid.exists) return
+                    
             handleWord(guess)
             setGuess("")
-            setCansubmit(false)
+
         }
+
+        submission()
+        
     }, [cansubmit])
 
     useEffect(() => {
