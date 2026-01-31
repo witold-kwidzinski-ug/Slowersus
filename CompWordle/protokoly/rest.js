@@ -138,7 +138,7 @@ const io = new Server(server, {cors: {
     methods: ["GET", "POST"]
   }})
 
-gameSocket(io)
+gameSocket(io, words, games)
 
 
 server.listen(8000, () => console.log("Started express server at http://localhost:8000/"))
