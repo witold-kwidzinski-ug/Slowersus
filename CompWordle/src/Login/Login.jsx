@@ -1,6 +1,6 @@
 import { useFormik } from "formik"
 
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { useUserInfo } from "../../contexts/UserInfoContext"
 
 
@@ -8,6 +8,9 @@ import { useUserInfo } from "../../contexts/UserInfoContext"
 export default function Login() {
 
     const navigate = useNavigate()
+    const location = useLocation()
+
+    const path = location.state.from || "/main" 
 
     const {dispatch} = useUserInfo()
 
@@ -36,18 +39,22 @@ export default function Login() {
             console.log("login success")
 
             dispatch({type: "LOGIN", payload: d})
+            
 
-            navigate("/main")
+            navigate(path)
 
         }
     })
     
 
     return (
-        <form onSubmit={loginForm.handleSubmit}>
-            <input type="text" name="name" value={loginForm.values.name} onChange={loginForm.handleChange} placeholder="name" />
-            <input type="text" name="password" value={loginForm.values.password} onChange={loginForm.handleChange} placeholder="password" />
-            <button type="submit">Login</button>
-        </form>
+        <>
+            <form onSubmit={loginForm.handleSubmit}>
+                <input type="text" name="name" value={loginForm.values.name} onChange={loginForm.handleChange} placeholder="name" />
+                <input type="text" name="password" value={loginForm.values.password} onChange={loginForm.handleChange} placeholder="password" />
+                <button type="submit">Login</button>
+            </form>
+            <button onClick={() => navigate("/register")}>No account?</button>
+        </>
     )
 }

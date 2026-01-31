@@ -3,12 +3,15 @@ import { useFormik } from "formik"
 
 import { useNavigate } from "react-router-dom"
 import { useUserInfo } from "../../contexts/UserInfoContext"
+import { useLocation } from "react-router-dom"
 
 
 
 export default function Login() {
 
     const navigate = useNavigate()
+
+    const path = "/main" 
 
     const {dispatch} = useUserInfo()
 
@@ -38,7 +41,7 @@ export default function Login() {
 
             dispatch({type: "LOGIN", payload: d})
 
-            navigate("/main")
+            navigate(path)
         }
     })
     

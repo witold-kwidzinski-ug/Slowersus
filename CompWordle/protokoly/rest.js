@@ -1,7 +1,8 @@
 import express from "express"
+import http from "http"
 import cors from "cors"
 import fs from "fs"
-import { v4 as uuidv4 } from "uuid"
+import { v4 as uuidv4, v4 } from "uuid"
 
 import dotenv from "dotenv"
 dotenv.config()
@@ -12,7 +13,10 @@ import bcrypt from "bcrypt"
 
 
 
+
 const app = express()
+const server = http.createServer(app)
+
 
 app.use([express.json(), cors()])
 
@@ -41,7 +45,12 @@ app.get("/validate/:word", (req, res) => {
 
 
 const accounts = [
-    {id: 14, name: "user1", password: "supcio"}
+    {id: 14, name: "user1", password: "supcio"},
+    {
+    id: "52e0ebae-6704-4f5d-bf18-be70e00c2925",
+    name: "siema",
+    password: "$2b$10$fgE48d./L50z9TY6dIuSTO5vxJL3qE5DmexZZSXCNaNpuvSuahqOy"
+  }
 ]
 
 app.get("/accounts", (req, res) => {
@@ -96,4 +105,40 @@ app.post("/register", async (req, res) => {
 
 
 
-app.listen(8000, () => console.log("Started express server at http://localhost:8000/"))
+
+const games = []
+
+app.post("/games", (req, res) => {
+    const id = req.body.userId
+
+    const gameid = v4()
+
+    games.push({gameid, p1: id, p2: null})
+
+
+
+    res.send(gameid)
+
+})
+
+app.get("/games", (req, res) => {
+    res.json(games)
+})
+
+
+
+
+
+
+import {Server} from "socket.io"
+import gameSocket from "./gameSocket.js"
+
+const io = new Server(server, {cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }})
+
+gameSocket(io)
+
+
+server.listen(8000, () => console.log("Started express server at http://localhost:8000/"))

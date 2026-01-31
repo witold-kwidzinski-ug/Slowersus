@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Keyboard from "../Compontents/Keyboard"
-import WordView from "../Compontents/WordView"
+import Keyboard from "../Compontents/solo/Keyboard"
+import WordView from "../Compontents/solo/WordView"
 import "./solo.css"
 
 import { defaultLetters } from "./defaultLetters"
-import GuessedLetters from "../Compontents/GuessedLetters"
+import GuessedLetters from "../Compontents/solo/GuessedLetters"
 
 export default function Solo() {
 
