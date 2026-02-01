@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
+import { useUserInfo } from "../../contexts/UserInfoContext"
 import {io} from "socket.io-client"
 
 import { defaultLetters } from "../Multi/defaultLetters"
@@ -16,8 +17,12 @@ export default function Multi() {
 
     const {id} = useParams()
 
+    const socket = useRef(null)
+    const joinedRef = useRef(false)
 
-    const canWrite = useRef(false)
+    const [canWrite, setCanWrite] = useState(false)
+    const [canStart, setCanStart] = useState(false)
+
 
     const [words, setWords] = useState([])
     const [letters, setLetters] = useState(defaultLetters)
@@ -26,33 +31,73 @@ export default function Multi() {
     const [enemyWords, setEnemyWords] = useState([])
 
     useEffect(() => {
-        const socket = io("http://localhost:8000")
+        if (!id || !state.id) return
 
-        socket.emit("join_game", {gameid: id, pid: state.id})
+        socket.current = io("http://localhost:8000")
+
+        const onStartGame = () => {
+            setCanWrite(true)
+            setCanStart(false)
+        }
         
-        socket.on("start_game", () => {
-            canWrite.current = true
-        })
+        socket.current.on("start_game", onStartGame)
 
-        socket.on("newguess", ({pid, final}) => {
+        const onGameJoined = (gameinfo) => {
+            setCanStart(state.id === gameinfo.p1.id && gameinfo.p2.id !== null)
+            console.log("lol")
+            console.log(gameinfo)
+        }
+
+        socket.current.on("game_joined", onGameJoined)
+
+        const onNewGuess = ({pid, final}) => {
+            console.log(final)
             if (state.id === pid) {
-                setWords(p => [...p, final])
-                setLiveGuess("")
+                setWords(prev => [...prev, final])
+                setLetters(prev => Object.keys(prev).reduce((acc, el) => {
+                    if (!final.find(n => n.letter === el)) {
+                        return {...acc, [el]: prev[el]}
+                    }
+
+                    if (prev[el] !== "whitesmoke" || prev[el] === "green") {
+                        return {...acc, [el]: prev[el]}
+                    }
+
+                    return {...acc, [el]: final.find(n => n.letter === el).color}
+
+                }, {}))
             } else {
                 setEnemyWords(p => [...p, final])
             }
-        })
+        }
+
+        socket.current.on("newguess", onNewGuess)
+
+        const onConnect = () => {
+            if (!joinedRef.current) {
+                socket.current.emit("join_game", {gameid: id, pid: state.id})
+                joinedRef.current = true
+            }
+        }
+        
+        socket.current.on("connect", onConnect)
 
 
-        return () => socket.disconnect()
+        return () => {
+            socket.current.off("start_game", onStartGame)
+            socket.current.off("game_joined", onGameJoined)
+            socket.current.off("newguess", onNewGuess)
+            socket.current.disconnect()
+        }
 
-    }, [])
+    }, [id, state.id])
 
 
     return (
         <>
+            {canStart && !canWrite && <button onClick={() => socket.current.emit("start_game")}>lol</button>}
             <P1WordView words={words} liveGuess={liveGuess} />
-            {words.length !== 6 && <Keyboard setWords={setWords} setLiveGuess={setLiveGuess} setLetters={setLetters} socket={socket} />}
+            {words.length !== 6 && canWrite && socket.current !== null && <Keyboard setLiveGuess={setLiveGuess} socket={socket} />}
             <GuessedLetters letters={letters} />
             <P2WordView words={enemyWords} />
         </>

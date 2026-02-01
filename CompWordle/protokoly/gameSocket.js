@@ -3,11 +3,13 @@ export default function gameSocket(io, words, games) {
     io.on("connection", (socket) => {
 
         socket.on("join_game", ({gameid, pid}) => {
+            console.log(`${gameid}, ${pid}`)
             socket.join(gameid)
             socket.pid = pid
             socket.gameid = gameid
-            if (!games.find(n => n.gameid === gameid)) {
-                const gameinfo = {
+            const gameinfo = games.find(n => n.gameid === gameid)
+            if (!gameinfo) {
+                const g = {
                     gameid: gameid,
                     p1: {
                         id: pid,
@@ -17,27 +19,38 @@ export default function gameSocket(io, words, games) {
                         id: null,
                         guesses: []
                     },
-                    answer: words[Math.floor(Math.random() * words.length)]
+                    answer: words[Math.floor(Math.random() * words.length)].toUpperCase()
                 }
-                games.push(gameinfo)
-                socket.emit("game_joined", gameinfo)
+                games.push(g)
+                console.log("p1")
+                socket.emit("game_joined", g)
             } else {
-                const gameinfo = games.find(n => n.gameid === gameid)
-                gameinfo.p2.id = pid
-                socket.emit("game_joined", gameinfo)
+                console.log("p2")
+                
+                if (!gameinfo.p2.id && pid !== gameinfo.p1.id) {
+                    gameinfo.p2.id = pid
+                }
+
+                console.log(gameinfo.p2.id)
+
+                io.to(gameid).emit("game_joined", gameinfo)
             }
         })
 
         socket.on("start_game", () => {
             const gameinfo = games.find(n => n.gameid === socket.gameid)
+            if (!gameinfo) return
             if (!gameinfo.p1.id || !gameinfo.p2.id) return
             io.to(socket.gameid).emit("start_game")
         })
 
         socket.on("guess", (word) => {
-            if (!words.includes(word)) return
+            console.log(`${socket.pid}: ${word}`)
+            if (!words.includes(word.toLowerCase())) return
             const gameinfo = games.find(n => n.gameid === socket.gameid)
             
+            if (!gameinfo) return
+
             const final = Array(5).fill(null)
 
             const answerobj = [...gameinfo.answer].reduce((acc, el) => {

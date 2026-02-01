@@ -1,4 +1,4 @@
-import Letter from "./Letter";
+import Letter from "./P1Letter";
 
 
 export default function P1WordView({words, liveGuess}) {

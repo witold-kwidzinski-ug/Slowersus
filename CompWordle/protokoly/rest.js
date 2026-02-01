@@ -109,12 +109,8 @@ app.post("/register", async (req, res) => {
 const games = []
 
 app.post("/games", (req, res) => {
-    const id = req.body.userId
 
     const gameid = v4()
-
-    games.push({gameid, p1: id, p2: null})
-
 
 
     res.send(gameid)

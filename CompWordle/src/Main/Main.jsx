@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react"
 import CreateButton from "../Compontents/main/CreateButton"
+import { useNavigate } from "react-router-dom"
+import { useUserInfo } from "../../contexts/UserInfoContext"
 
 export default function Main() {
 
+    const navigate = useNavigate()
+
     const [games, setGames] = useState([])
+
 
     useEffect(() => {
         async function getGames() {
@@ -18,7 +23,7 @@ export default function Main() {
         <>
             <p>main site</p>
 
-            {games.length > 0 && games.map(n => <p key={`${n.gameid}`}>{n.gameid}</p>)}
+            {games.length > 0 && games.map(n => <button onClick={() => navigate(`/multi/${n.gameid}`)} key={`${n.gameid}`}>{n.gameid}</button>)}
 
             <CreateButton />
         </>
