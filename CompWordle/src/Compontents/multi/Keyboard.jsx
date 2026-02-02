@@ -34,20 +34,6 @@ export default function Keyboard({setLiveGuess, socket}) {
 
             }
 
-            // setGuess(prev => {
-            //     if (e.key === "Enter" && prev.length === 5 && canSubmit.current) {
-            //         canSubmit.current = false
-            //         socket.current.emit("guess", prev)
-            //         return prev
-            //     }
-            //     if (e.key === "Backspace" && prev.length > 0) {
-            //         return prev.slice(0, -1)
-            //     }
-            //     if (/^[a-zA-Z]$/.test(e.key) && prev.length < 5) {
-            //         return prev + e.key.toUpperCase()
-            //     }
-            //     return prev
-            // })
         }
 
         window.addEventListener("keydown", handler)
@@ -71,7 +57,19 @@ export default function Keyboard({setLiveGuess, socket}) {
         }
 
         socket.current.on("newguess", fn)
-        return () => socket.current.off("newguess", fn)
+
+        const fn2 = () => {
+            console.log("wrong guess")
+            setTimeout(() => {canSubmit.current = true}, 1000)
+            
+        }
+
+        socket.current.on("word_failed", fn2)
+
+        return () => {
+            socket.current.off("newguess", fn)
+            socket.current.off("word_failed", fn2)
+        }
     }, [socket, state.id])
 
 

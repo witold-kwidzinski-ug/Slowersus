@@ -46,10 +46,22 @@ export default function gameSocket(io, words, games) {
 
         socket.on("guess", (word) => {
             console.log(`${socket.pid}: ${word}`)
-            if (!words.includes(word.toLowerCase())) return
+            if (!words.includes(word.toLowerCase())) {
+                socket.emit("word_failed")
+                return
+            }
             const gameinfo = games.find(n => n.gameid === socket.gameid)
             
-            if (!gameinfo) return
+            if (!gameinfo) {
+                socket.emit("word_failed")
+                return
+            }
+
+            if (word === gameinfo.answer) {
+                io.to(socket.gameid).emit("newguess", {pid: socket.pid, final: [...word].map(letter => ({letter, color: "green"}))})
+                io.to(socket.gameid).emit("win", {pid: socket.pid})
+                return
+            }
 
             const final = Array(5).fill(null)
 

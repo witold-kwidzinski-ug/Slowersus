@@ -82,11 +82,23 @@ export default function Multi() {
         
         socket.current.on("connect", onConnect)
 
+        const onWin = ({pid}) => {
+            if (state.id === pid) {
+                console.log("You win!")
+            } else {
+                console.log("You lose!")
+            }
+            setCanWrite(false)
+        }
+
+        socket.current.on("win", onWin)
+
 
         return () => {
             socket.current.off("start_game", onStartGame)
             socket.current.off("game_joined", onGameJoined)
             socket.current.off("newguess", onNewGuess)
+            socket.current.off("win", onWin)
             socket.current.disconnect()
         }
 

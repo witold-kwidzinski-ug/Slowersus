@@ -44,18 +44,55 @@ app.get("/validate/:word", (req, res) => {
 
 
 
-const accounts = [
-    {id: 14, name: "user1", password: "supcio"},
+let accounts = [
+    {id: 14, name: "user1", password: "supcio", points: 0.0},
     {
     id: "52e0ebae-6704-4f5d-bf18-be70e00c2925",
     name: "siema",
-    password: "$2b$10$fgE48d./L50z9TY6dIuSTO5vxJL3qE5DmexZZSXCNaNpuvSuahqOy"
+    password: "$2b$10$fgE48d./L50z9TY6dIuSTO5vxJL3qE5DmexZZSXCNaNpuvSuahqOy",
+    points: 0.0
   }
 ]
 
+//==============================ACCOUNTS==================================
+
 app.get("/accounts", (req, res) => {
-    res.send(accounts)
+    const name = req.headers["search-name"].toLowerCase()
+
+    if (name) {
+        res.send(accounts.filter(n => n.name.toLowerCase().includes(name)))
+    } else {
+        res.send(accounts)
+    }
+
+    
 })
+
+app.get("/user/:id", (req, res) => {
+    const id = req.params.id
+    const acc = accounts.find(n => n.id === id)
+
+    if (acc) {
+        res.send(acc)
+    } else {
+        res.send(`No user with id ${id} found.`)
+    }
+
+})
+
+app.delete("/user/:id", (req, res) => {
+    const id = req.params.id
+    const acc = accounts.findIndex(n => n.id === id)
+
+    if (acc) {
+        accounts.splice(id, 0)
+        res.send("User successfully deleted.")
+    } else {
+        res.send(`No user with id ${id} found.`)
+    }
+
+})
+
 
 app.post("/login", async (req, res) => {
     const {name, password} = req.body
@@ -96,15 +133,52 @@ app.post("/register", async (req, res) => {
 
     const pass = await bcrypt.hash(password, h)
 
-    const newacc = {id: uuidv4(), name: name, password: pass}
+    const newacc = {id: uuidv4(), name: name, password: pass, points: 0.0}
 
     accounts.push(newacc)
 
     res.json(newacc)
 })
 
+//================================RANKING==================================
+
+const blacklisted_ids = []
+
+app.get("/ranking", (req, res) => {
+    const top = Number(req.headers["top"])
+
+    const r = accounts.filter(n => !blacklisted_ids.includes(n.id)).sort((a,b) => a.points - b.points)
+
+    if (!isNaN(top) && top > 0) {
+        res.send(r.slice(0,top))
+    } else {
+        res.send(r)
+    }
+    
+})
+
+app.delete("/ranking/:id", (req, res) => {
+    const id = req.params.id
+
+    blacklisted_ids.push(id)
+
+    res.send("User successfully banned from ranking.")
+})
+
+app.post("/ranking/:id", (req, res) => {
+    const id = req.params.id
+
+    bl_index = blacklisted_ids.findIndex(n => n.id === id)
+
+    blacklisted_ids.splice(bl_index, 0)
+
+    res.send("User successfully put in ranking.")
+
+})
 
 
+
+//================================GAMES====================================
 
 const games = []
 
