@@ -10,6 +10,7 @@ import P2WordView from "../Compontents/multi/P2WordView"
 import GuessedLetters from "../Compontents/multi/GuessedLetters"
 import Keyboard from "../Compontents/multi/Keyboard"
 
+import "./multi.css"
 
 export default function Multi() {
 
@@ -108,10 +109,17 @@ export default function Multi() {
     return (
         <>
             {canStart && !canWrite && <button onClick={() => socket.current.emit("start_game")}>lol</button>}
-            <P1WordView words={words} liveGuess={liveGuess} />
-            {words.length !== 6 && canWrite && socket.current !== null && <Keyboard setLiveGuess={setLiveGuess} socket={socket} />}
-            <GuessedLetters letters={letters} />
-            <P2WordView words={enemyWords} />
+            <div id="gameview">
+                <div>
+                    <P1WordView words={words} liveGuess={liveGuess} />
+                    {words.length !== 6 && canWrite && socket.current !== null && <Keyboard setLiveGuess={setLiveGuess} socket={socket} />}
+                    <GuessedLetters letters={letters} />
+                </div>
+                <div>
+                    <h1 style={{textAlign: "center"}}>Enemy POV:</h1>
+                    <P2WordView words={enemyWords} />
+                </div>
+            </div>
         </>
         )
 }

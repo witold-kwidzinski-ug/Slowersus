@@ -11,6 +11,7 @@ import Register from "./Login/Register"
 import Multi from "./Multi/Multi"
 import Users from "./Users/Users"
 import U from "./U/U"
+import Ranking from './Ranking/Ranking'
 import { useUserInfo } from '../contexts/UserInfoContext'
 import Header from './Header'
 
@@ -28,12 +29,14 @@ function AutoRedirect({children}) {
 
 function App() {
 
+  const {state} = useUserInfo()
+
 
   return (
     <>
       
       <Router>
-        <Header />
+        {state.id && <Header />}
         <Routes>
           <Route path='/' element={<AutoRedirect><Solo /></AutoRedirect>} />
           <Route path='/main' element={<AutoRedirect><Main /></AutoRedirect>} />
@@ -42,6 +45,7 @@ function App() {
           <Route path='/multi/:id' element={<AutoRedirect><Multi /></AutoRedirect>} />
           <Route path='/users' element={<AutoRedirect><Users /></AutoRedirect>} />
           <Route path='/u/:id' element={<AutoRedirect><U /></AutoRedirect>} />
+          <Route path='/ranking' element={<AutoRedirect><Ranking /></AutoRedirect>} />
         </Routes>
       </Router>
     </>

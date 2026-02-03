@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { useUserInfo } from "../../contexts/UserInfoContext"
 import { useLocation } from "react-router-dom"
 
-
+import "./form.css"
 
 export default function Login() {
 
@@ -40,6 +40,7 @@ export default function Login() {
             console.log("register success")
 
             dispatch({type: "LOGIN", payload: d})
+            localStorage.setItem("userinfo", JSON.stringify({id: d.id, name: d.name}))
 
             navigate(path)
         }
@@ -47,10 +48,12 @@ export default function Login() {
     
 
     return (
-        <form onSubmit={loginForm.handleSubmit}>
+        <>
+        <form id="loginform" onSubmit={loginForm.handleSubmit}>
             <input type="text" name="name" value={loginForm.values.name} onChange={loginForm.handleChange} placeholder="name" />
             <input type="text" name="password" value={loginForm.values.password} onChange={loginForm.handleChange} placeholder="password" />
-            <button type="submit">Login</button>
+            <button type="submit">Register</button>
         </form>
+        </>
     )
 }

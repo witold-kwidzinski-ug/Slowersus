@@ -93,7 +93,7 @@ export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
                 return {...acc, [el]: prev[el]}
             }
 
-            if (prev[el] !== "whitesmoke" || prev[el] === "green") {
+            if (prev[el] !== "darkgrey" || prev[el] === "green") {
                 return {...acc, [el]: prev[el]}
             }
 
