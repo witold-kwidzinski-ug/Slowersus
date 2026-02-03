@@ -21,6 +21,8 @@ export default function Multi() {
     const socket = useRef(null)
     const joinedRef = useRef(false)
 
+    const isHost = useRef(false)
+
     const [canWrite, setCanWrite] = useState(false)
     const [canStart, setCanStart] = useState(false)
 
@@ -47,6 +49,9 @@ export default function Multi() {
             setCanStart(state.id === gameinfo.p1.id && gameinfo.p2.id !== null)
             console.log("lol")
             console.log(gameinfo)
+            if (state.id === gameinfo.p1.id) {
+                isHost.current = true
+            }
         }
 
         socket.current.on("game_joined", onGameJoined)
@@ -60,7 +65,7 @@ export default function Multi() {
                         return {...acc, [el]: prev[el]}
                     }
 
-                    if (prev[el] !== "whitesmoke" || prev[el] === "green") {
+                    if (prev[el] !== "darkgrey" || prev[el] === "green") {
                         return {...acc, [el]: prev[el]}
                     }
 
@@ -70,6 +75,7 @@ export default function Multi() {
             } else {
                 setEnemyWords(p => [...p, final])
             }
+            
         }
 
         socket.current.on("newguess", onNewGuess)
@@ -83,16 +89,62 @@ export default function Multi() {
         
         socket.current.on("connect", onConnect)
 
-        const onWin = ({pid}) => {
+        const onWin = ({pid, answer}) => {
+            let result
             if (state.id === pid) {
-                console.log("You win!")
+                result = "win"
             } else {
-                console.log("You lose!")
+                result = "lose"
+                
             }
+            fetch(`http://localhost:8000/result/${state.id}`, {
+                    method: "PUT",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        result: result,
+                        wordamount: words.length,
+                        enemywordamount: enemyWords.length
+                    })
+                })
+
             setCanWrite(false)
+            window.alert(`You ${result}! Answer: ${answer}`)
+            if (isHost.current) {
+                setCanStart(true)
+            }
+            setWords([])
+            setLetters(defaultLetters)
+            setEnemyWords([])
+            setLiveGuess([])
         }
 
         socket.current.on("win", onWin)
+
+        const onReset = () => {
+            setCanWrite(false)
+            setCanStart(false)
+            setWords([])
+            setLetters(defaultLetters)
+            setEnemyWords([])
+            setLiveGuess([])
+
+        }
+
+        socket.current.on("reset", onReset)
+
+        const onDraw = ({answer}) => {
+            setCanWrite(false)
+            window.alert(`Draw! | Answer: ${answer}`)
+            setWords([])
+            setLetters(defaultLetters)
+            setEnemyWords([])
+            setLiveGuess([])
+            if (isHost.current) {
+                setCanStart(true)
+            }
+        }
+
+        socket.current.on("draw", onDraw)
 
 
         return () => {
@@ -100,6 +152,8 @@ export default function Multi() {
             socket.current.off("game_joined", onGameJoined)
             socket.current.off("newguess", onNewGuess)
             socket.current.off("win", onWin)
+            socket.current.off("reset", onReset)
+            socket.current.off("draw", onDraw)
             socket.current.disconnect()
         }
 

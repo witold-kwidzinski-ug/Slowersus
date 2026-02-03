@@ -45,13 +45,15 @@ app.get("/validate/:word", (req, res) => {
 
 
 let accounts = [
-    {id: "14", name: "user1", password: "supcio", bio: "a", points: 0.0},
+    {id: "14", name: "user1", password: "supcio", bio: "a", points: 0.0, wins: 8, losses: 12},
     {
     id: "52e0ebae-6704-4f5d-bf18-be70e00c2925",
     name: "siema",
     password: "$2b$10$fgE48d./L50z9TY6dIuSTO5vxJL3qE5DmexZZSXCNaNpuvSuahqOy",
     bio: "jestem super",
-    points: 0.0
+    points: 0.0,
+    wins: 17,
+    losses: 3
   }
 ]
 
@@ -97,6 +99,26 @@ app.delete("/user/:id", (req, res) => {
 
 })
 
+app.put("/result/:id", (req, res) => {
+    const id = req.params.id
+    const stats = req.body
+
+    const acc = accounts.find(n => n.id === id)
+
+    if (stats.result === "win") {
+        acc.wins++
+        acc.points += (7 - stats.wordamount)
+    } else {
+        acc.losses++
+        acc.points -= (7 - stats.enemywordamount)
+        if (acc.points < 0) acc.points = 0
+    }
+
+    res.send("User score changed.")
+
+
+})
+
 
 app.post("/login", async (req, res) => {
     const {name, password} = req.body
@@ -137,7 +159,7 @@ app.post("/register", async (req, res) => {
 
     const pass = await bcrypt.hash(password, h)
 
-    const newacc = {id: uuidv4(), name: name, password: pass, bio: "", points: 0.0}
+    const newacc = {id: uuidv4(), name: name, password: pass, bio: "", points: 0.0, wins: 0, losses: 0}
 
     accounts.push(newacc)
 
@@ -151,7 +173,7 @@ const blacklisted_ids = []
 app.get("/ranking", (req, res) => {
     const top = Number(req.query["top"])
 
-    const r = accounts.filter(n => !blacklisted_ids.includes(n.id)).sort((a,b) => a.points - b.points)
+    const r = accounts.filter(n => !blacklisted_ids.includes(n.id)).sort((a,b) => b.points - a.points)
 
     if (!isNaN(top) && top > 0) {
         res.send(r.slice(0,top))
@@ -184,7 +206,7 @@ app.post("/ranking/:id", (req, res) => {
 
 //================================GAMES====================================
 
-const games = []
+let games = []
 
 app.post("/games", (req, res) => {
 
@@ -198,7 +220,6 @@ app.post("/games", (req, res) => {
 app.get("/games", (req, res) => {
     res.json(games)
 })
-
 
 
 

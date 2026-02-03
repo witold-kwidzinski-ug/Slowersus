@@ -41,6 +41,7 @@ export default function gameSocket(io, words, games) {
             const gameinfo = games.find(n => n.gameid === socket.gameid)
             if (!gameinfo) return
             if (!gameinfo.p1.id || !gameinfo.p2.id) return
+            gameinfo.answer = words[Math.floor(Math.random() * words.length)].toUpperCase()
             io.to(socket.gameid).emit("start_game")
         })
 
@@ -59,7 +60,7 @@ export default function gameSocket(io, words, games) {
 
             if (word === gameinfo.answer) {
                 io.to(socket.gameid).emit("newguess", {pid: socket.pid, final: [...word].map(letter => ({letter, color: "green"}))})
-                io.to(socket.gameid).emit("win", {pid: socket.pid})
+                io.to(socket.gameid).emit("win", {pid: socket.pid, answer: gameinfo.answer})
                 return
             }
 
@@ -98,6 +99,10 @@ export default function gameSocket(io, words, games) {
 
             gameinfo.p1.id === socket.pid ? gameinfo.p1.guesses.push(final) : gameinfo.p2.guesses.push(final)
 
+            if (gameinfo.p1.guesses.length === 6 && gameinfo.p2.guesses.length === 6) {
+                io.to(socket.gameid).emit("draw", {answer: gameinfo.answer})
+                return
+            }
             
             io.to(socket.gameid).emit("newguess", {pid: socket.pid, final: final})
 
@@ -106,6 +111,23 @@ export default function gameSocket(io, words, games) {
         })
 
         socket.on("disconnect", () => {
+            const gameinfo = games.find(n => n.gameid === socket.gameid)
+            if (socket.pid === gameinfo.p1.id && gameinfo.p2.id === null) {
+                games = games.filter(n => n.gameid !== gameinfo.gameid)
+                return
+            }
+            if (socket.pid === gameinfo.p1.id) {
+                gameinfo.p1.id = gameinfo.p2.id
+                gameinfo.p2.id = null
+                socket.send("reset")
+                return
+            }
+            if (socket.pid === gameinfo.p2.id) {
+                gameinfo.p2.id = null
+                socket.send("reset")
+                return
+            }
+
 
         })
 

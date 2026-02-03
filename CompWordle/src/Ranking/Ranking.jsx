@@ -19,9 +19,10 @@ export default function Ranking() {
 
     return (
         <div id="ranking">
+            <h1 style={{textAlign: "center"}}>Top 10:</h1>
             {top10.map((n, index) => (
                 <Link to={`/u/${n.id}`} key={`${n.id}${index}`}>
-                    {`${index + 1}`}. {n.name} {n.points}
+                    {`${index + 1}`}. {n.name} | {n.points} | {Math.round((n.wins / (n.wins + n.losses)) * 10000) / 100}%
                 </Link>
             ))}
         </div>

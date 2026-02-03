@@ -2,6 +2,8 @@ import { useParams } from "react-router-dom";
 import { useUserInfo } from "../../contexts/UserInfoContext";
 import { useEffect, useRef, useState } from "react";
 
+import "./u.css"
+
 export default function U() {
     const {state} = useUserInfo()
     const {id} = useParams()
