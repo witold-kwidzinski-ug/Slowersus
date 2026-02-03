@@ -45,11 +45,12 @@ app.get("/validate/:word", (req, res) => {
 
 
 let accounts = [
-    {id: 14, name: "user1", password: "supcio", points: 0.0},
+    {id: "14", name: "user1", password: "supcio", bio: "a", points: 0.0},
     {
     id: "52e0ebae-6704-4f5d-bf18-be70e00c2925",
     name: "siema",
     password: "$2b$10$fgE48d./L50z9TY6dIuSTO5vxJL3qE5DmexZZSXCNaNpuvSuahqOy",
+    bio: "jestem super",
     points: 0.0
   }
 ]
@@ -57,12 +58,14 @@ let accounts = [
 //==============================ACCOUNTS==================================
 
 app.get("/accounts", (req, res) => {
-    const name = req.headers["search-name"].toLowerCase()
+    const name = req.query["search-name"]
+
+    const accs = accounts.map(({password, ...n}) => n)
 
     if (name) {
-        res.send(accounts.filter(n => n.name.toLowerCase().includes(name)))
+        res.send(accs.filter(n => n.name.toLowerCase().includes(name.toLowerCase())))
     } else {
-        res.send(accounts)
+        res.send(accs)
     }
 
     
@@ -73,7 +76,8 @@ app.get("/user/:id", (req, res) => {
     const acc = accounts.find(n => n.id === id)
 
     if (acc) {
-        res.send(acc)
+        const {password, ...acc2} = acc
+        res.send(acc2)
     } else {
         res.send(`No user with id ${id} found.`)
     }
@@ -133,7 +137,7 @@ app.post("/register", async (req, res) => {
 
     const pass = await bcrypt.hash(password, h)
 
-    const newacc = {id: uuidv4(), name: name, password: pass, points: 0.0}
+    const newacc = {id: uuidv4(), name: name, password: pass, bio: "", points: 0.0}
 
     accounts.push(newacc)
 
@@ -145,7 +149,7 @@ app.post("/register", async (req, res) => {
 const blacklisted_ids = []
 
 app.get("/ranking", (req, res) => {
-    const top = Number(req.headers["top"])
+    const top = Number(req.query["top"])
 
     const r = accounts.filter(n => !blacklisted_ids.includes(n.id)).sort((a,b) => a.points - b.points)
 
