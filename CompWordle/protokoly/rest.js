@@ -45,17 +45,20 @@ app.get("/validate/:word", (req, res) => {
 
 
 let accounts = [
-    {id: "14", name: "user1", password: "supcio", bio: "a", points: 0.0, wins: 8, losses: 12},
+    {id: "14", name: "user1", password: "supcio", bio: "a", role: "user", points: 0.0, wins: 8, losses: 12},
     {
     id: "52e0ebae-6704-4f5d-bf18-be70e00c2925",
     name: "siema",
     password: "$2b$10$fgE48d./L50z9TY6dIuSTO5vxJL3qE5DmexZZSXCNaNpuvSuahqOy",
     bio: "jestem super",
+    role: "admin",
     points: 0.0,
     wins: 17,
     losses: 3
   }
 ]
+
+const adminperms = ["52e0ebae-6704-4f5d-bf18-be70e00c2925"]
 
 //==============================ACCOUNTS==================================
 
@@ -119,6 +122,17 @@ app.put("/result/:id", (req, res) => {
 
 })
 
+app.post("/validate_admin/:id", (req, res) => {
+    const id = req.params.id
+
+    if (adminperms.includes(id)) {
+        res.send("Valid")
+    } else {
+        res.send("Invalid.")
+    }
+
+})
+
 
 app.post("/login", async (req, res) => {
     const {name, password} = req.body
@@ -159,7 +173,7 @@ app.post("/register", async (req, res) => {
 
     const pass = await bcrypt.hash(password, h)
 
-    const newacc = {id: uuidv4(), name: name, password: pass, bio: "", points: 0.0, wins: 0, losses: 0}
+    const newacc = {id: uuidv4(), name: name, password: pass, bio: "", role: "user", points: 0.0, wins: 0, losses: 0}
 
     accounts.push(newacc)
 
@@ -194,9 +208,9 @@ app.delete("/ranking/:id", (req, res) => {
 app.post("/ranking/:id", (req, res) => {
     const id = req.params.id
 
-    bl_index = blacklisted_ids.findIndex(n => n.id === id)
+    const bl_index = blacklisted_ids.findIndex(n => n.id === id)
 
-    blacklisted_ids.splice(bl_index, 0)
+    blacklisted_ids.splice(bl_index, 1)
 
     res.send("User successfully put in ranking.")
 

@@ -12,6 +12,7 @@ import Multi from "./Multi/Multi"
 import Users from "./Users/Users"
 import U from "./U/U"
 import Ranking from './Ranking/Ranking'
+import Admin from './Admin/Admin'
 import { useUserInfo } from '../contexts/UserInfoContext'
 import Header from './Header'
 
@@ -46,6 +47,7 @@ function App() {
           <Route path='/users' element={<AutoRedirect><Users /></AutoRedirect>} />
           <Route path='/u/:id' element={<AutoRedirect><U /></AutoRedirect>} />
           <Route path='/ranking' element={<AutoRedirect><Ranking /></AutoRedirect>} />
+          <Route path='/admin' element={<AutoRedirect><Admin /></AutoRedirect>} />
         </Routes>
       </Router>
     </>

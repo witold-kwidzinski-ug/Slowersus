@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 
+import "./users.css"
+
 export default function Users() {
     const [params] = useSearchParams()
     const sn = params.get("search-name")
@@ -24,8 +26,11 @@ export default function Users() {
 
     return (
         <>
-            {users.map(n => (<Link to={`/u/${n.id}`} key={n.id}>{n.name}</Link>))}
-        
+            <h1 style={{textAlign: "center"}}>{`Search results for: "${sn}"`}</h1>
+            <div id={"userlist"}>
+                {users.map(n => (<Link to={`/u/${n.id}`} key={n.id}>{n.name}</Link>))}
+            </div>
         </>
+        
     )
 }

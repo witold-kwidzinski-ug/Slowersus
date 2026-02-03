@@ -29,7 +29,7 @@ export default function Header() {
                 <button onClick={() => {
                     dispatch({type: "LOGOUT"})
                     localStorage.removeItem("userinfo")
-                    window.location.replace("/login")
+                    navigate("/login")
                 }}>Logout</button>
             </div>
           

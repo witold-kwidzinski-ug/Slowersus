@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import CreateButton from "../Compontents/main/CreateButton"
 import { useNavigate } from "react-router-dom"
-import { useUserInfo } from "../../contexts/UserInfoContext"
+
+import "./main.css"
 
 export default function Main() {
 
@@ -21,11 +22,11 @@ export default function Main() {
 
     return (
         <>
-            <p>main site</p>
-
-            {games.length > 0 && games.map(n => <button onClick={() => navigate(`/multi/${n.gameid}`)} key={`${n.gameid}`}>{n.gameid}</button>)}
-
+            <h1>Game lobbies</h1>
             <CreateButton />
+            <div id="multi">
+                {games.length > 0 && games.map(n => <button onClick={() => navigate(`/multi/${n.gameid}`)} key={`${n.gameid}`}>{n.p1}</button>)}
+            </div>
         </>
     )
 }
