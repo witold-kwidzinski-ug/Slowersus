@@ -25,7 +25,7 @@ export default function Main() {
             <h1>Game lobbies</h1>
             <CreateButton />
             <div id="multi">
-                {games.length > 0 && games.map(n => <button onClick={() => navigate(`/multi/${n.gameid}`)} key={`${n.gameid}`}>{n.p1}</button>)}
+                {games.length > 0 && games.map(n => <button onClick={() => navigate(`/multi/${n.gameid}`)} key={`${n.gameid}`}>{n.gameid}</button>)}
             </div>
         </>
     )

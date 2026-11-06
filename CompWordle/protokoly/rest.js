@@ -2,6 +2,7 @@ import express from "express"
 import http from "http"
 import cors from "cors"
 import fs from "fs"
+import path from "path"
 import { v4 as uuidv4, v4 } from "uuid"
 
 import dotenv from "dotenv"
@@ -13,14 +14,20 @@ import bcrypt from "bcrypt"
 
 
 
-
 const app = express()
 const server = http.createServer(app)
 
-
 app.use([express.json(), cors()])
 
-const words = JSON.parse(fs.readFileSync("protokoly/words.json")).words
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+const filePath = path.join(__dirname, "words.json")
+
+const words = JSON.parse(fs.readFileSync(filePath)).words
 
 
 app.get("/", (req, res) => {
