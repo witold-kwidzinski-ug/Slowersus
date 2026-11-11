@@ -1,0 +1,68 @@
+services:
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - sv-pgdata:/var/lib/postgresql/data
+      - "${PWD}/init.sql:/docker-entrypoint-initdb.d/init.sql"
+    networks:
+      - db-net
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.3
+    environment:
+    - KC_DB=postgres
+    - KC_DB_URL_HOST=${KC_DB_URL_HOST}
+    - KC_DB_URL_DATABASE=${KC_DB_URL_DATABASE}
+    - KC_DB_USERNAME=${KC_DB_USERNAME}
+    - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+    - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}
+    - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD}
+    networks:
+      - db-net
+      - backend-net
+    command: start-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - PUBLIC_KEY=${PUBLIC_KEY}
+    networks:
+      - db-net
+      - backend-net
+    ports: 
+    - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+
+volumes:
+  sv-pgdata:
+
+networks:
+  db-net:
+  backend-net:
+
