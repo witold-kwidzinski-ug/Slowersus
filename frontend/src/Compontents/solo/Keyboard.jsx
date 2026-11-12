@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import handleWord from "./handleWord"
 
 
 export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
@@ -11,6 +12,7 @@ export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
     useEffect(() => {
 
         function handler(e) {
+
 
             setGuess(prev => {
                 if (e.key === "Enter" && prev.length === 5) {
@@ -39,7 +41,7 @@ export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
             setCansubmit(false)
             if (!valid.exists) return
                     
-            handleWord(guess)
+            processWord()
             setGuess("")
 
         }
@@ -52,38 +54,9 @@ export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
         setLiveGuess(guess)
     }, [guess])
 
-    function handleWord(word) {
-        const final = Array(5).fill(null)
 
-        const answerobj = [...answer].reduce((acc, el) => {
-            if (!acc[el]) {
-                return {...acc, [el]: 1}
-            }
-            return {...acc, [el]: acc[el] + 1}
-
-        }, {})
-
-        for (let i = 0; i < 5; i++) {
-            const letter = word[i]
-            if (letter === answer[i]) {
-                final[i] = {letter, color: "lime"}
-                answerobj[letter]--
-            }
-        }
-
-        for (let i = 0; i < 5; i++) {
-            const letter = word[i]
-            if (final[i]) continue
-
-            if ([...answer].includes(letter) && answerobj[letter] > 0) {
-                final[i] = {letter, color: "gold"}
-                answerobj[letter]--
-                continue
-            }
-
-            final[i] = {letter, color: "gray"}
-
-        }
+    function processWord() {
+        const final = handleWord(guess, answer)
 
         setWords(prev => [...prev, final])
         setLetters(prev => Object.keys(prev).reduce((acc, el) => {
@@ -91,7 +64,7 @@ export default function Keyboard({setWords, setLiveGuess, answer, setLetters}) {
                 return {...acc, [el]: prev[el]}
             }
 
-            if (prev[el] !== "darkgrey" || prev[el] === "green") {
+            if (prev[el] !== "darkgrey" || prev[el] === "lime") {
                 return {...acc, [el]: prev[el]}
             }
 

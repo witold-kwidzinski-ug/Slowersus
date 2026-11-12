@@ -10,10 +10,9 @@ import GuessedLetters from "../Compontents/multi/GuessedLetters"
 import Keyboard from "../Compontents/multi/Keyboard"
 
 import "./multi.css"
+import keycloak from "../keycloak"
 
 export default function Multi() {
-
-    // const {state} = useUserInfo()
 
     const {id} = useParams()
 
@@ -33,7 +32,7 @@ export default function Multi() {
     const [enemyWords, setEnemyWords] = useState([])
 
     useEffect(() => {
-        if (!id || !state.id) return
+        if (!id || !keycloak.tokenParsed.sub) return
 
         socket.current = io()
 
@@ -45,8 +44,8 @@ export default function Multi() {
         socket.current.on("start_game", onStartGame)
 
         const onGameJoined = (gameinfo) => {
-            setCanStart(state.id === gameinfo.p1.id && gameinfo.p2.id !== null)
-            if (state.id === gameinfo.p1.id) {
+            setCanStart(keycloak.tokenParsed.sub === gameinfo.p1.id && gameinfo.p2.id !== null)
+            if (keycloak.tokenParsed.sub === gameinfo.p1.id) {
                 isHost.current = true
             }
         }
@@ -54,7 +53,7 @@ export default function Multi() {
         socket.current.on("game_joined", onGameJoined)
 
         const onNewGuess = ({pid, final}) => {
-            if (state.id === pid) {
+            if (keycloak.tokenParsed.sub === pid) {
                 setWords(prev => [...prev, final])
                 setLetters(prev => Object.keys(prev).reduce((acc, el) => {
                     if (!final.find(n => n.letter === el)) {
@@ -78,7 +77,7 @@ export default function Multi() {
 
         const onConnect = () => {
             if (!joinedRef.current) {
-                socket.current.emit("join_game", {gameid: id, pid: state.id})
+                socket.current.emit("join_game", {gameid: id, pid: keycloak.tokenParsed.sub})
                 joinedRef.current = true
             }
         }
@@ -87,13 +86,13 @@ export default function Multi() {
 
         const onWin = ({pid, answer}) => {
             let result
-            if (state.id === pid) {
+            if (keycloak.tokenParsed.sub === pid) {
                 result = "win"
             } else {
                 result = "lose"
                 
             }
-            fetch(`/api/result/${state.id}`, {
+            fetch(`/api/result/${keycloak.tokenParsed.sub}`, {
                     method: "PUT",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({
@@ -153,7 +152,7 @@ export default function Multi() {
             socket.current.disconnect()
         }
 
-    }, [id, state.id])
+    }, [id, keycloak.tokenParsed.sub])
 
 
     return (

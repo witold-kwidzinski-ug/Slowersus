@@ -6,8 +6,8 @@ export default function ProtectedRoute({children}) {
 
     function isLoggedIn() {
         if (!keycloak.authenticated) {
-                    keycloak.login({redirectUri: window.location.href})
-                    return null
+            keycloak.login({redirectUri: window.location.href})
+            return null
         }
     }
 

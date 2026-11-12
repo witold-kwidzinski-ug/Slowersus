@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import keycloak from "../keycloak"
 
 export default function Admin() {
 
@@ -7,17 +8,10 @@ export default function Admin() {
     // const {state} = useUserInfo()
 
     useEffect(() => {
-        async function validate() {
-            const d = await fetch(`/api/validate_admin/${state.id}`, {method: "POST"}).then(o => o.text())
-
-            if (d === "Valid") {
-                setIsAdmin(true)
-            }
-            console.log("hi")
-
+        if (keycloak.tokenParsed.realm_access.roles.includes("ADMIN")) {
+            setIsAdmin(true)
         }
-        validate()
-    }, [state.id])
+    }, [])
 
     return (
     <>

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
-import CreateButton from "../Compontents/main/CreateButton"
+import CreateButton from "../Compontents/lobbies/CreateButton"
 import { useNavigate } from "react-router-dom"
 
-import "./main.css"
+import "./lobbies.css"
 
-export default function Main() {
+export default function Lobbies() {
 
     const navigate = useNavigate()
 

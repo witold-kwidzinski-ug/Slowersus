@@ -12,7 +12,7 @@ export default function Header() {
             <Link to='/'>Solo</Link>
             
 
-            <Link to='/main' id="logo">CompWordle</Link>
+            <Link to='/lobbies' id="logo">CompWordle</Link>
 
             <form onSubmit={(e) => {
                 e.preventDefault()
@@ -22,12 +22,13 @@ export default function Header() {
             </form>
 
             <div>
-                {keycloak.tokenParsed && <Link to={`/u/${keycloak.tokenParsed.sub}`}>{keycloak.tokenParsed.preferred_username}</Link>}
+                {keycloak.authenticated && <Link to={`/u/${keycloak.tokenParsed.sub}`}>{keycloak.tokenParsed.preferred_username}</Link>}
 
-                <button onClick={() => {
-                    keycloak.clearToken()
+                {keycloak.authenticated ? <button onClick={() => {
+                    keycloak.logout()
                     navigate("/")
-                }}>Logout</button>
+                }}>Logout</button> : <button onClick={() => keycloak.login({redirectUri: window.location.href})}>Login</button>}
+                
             </div>
           
             

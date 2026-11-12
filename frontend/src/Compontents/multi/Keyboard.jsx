@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
+import keycloak from "../../keycloak"
+
 
 export default function Keyboard({setLiveGuess, socket}) {
 
@@ -49,7 +51,7 @@ export default function Keyboard({setLiveGuess, socket}) {
         if (!socket.current) return
 
         const fn = ({pid, final}) => {
-            if (state.id === pid) {
+            if (keycloak.tokenParsed.sub === pid) {
                 setGuess("")
                 canSubmit.current = true
             }
@@ -69,7 +71,7 @@ export default function Keyboard({setLiveGuess, socket}) {
             socket.current.off("newguess", fn)
             socket.current.off("word_failed", fn2)
         }
-    }, [socket, state.id])
+    }, [socket, keycloak.tokenParsed.sub])
 
 
     useEffect(() => {

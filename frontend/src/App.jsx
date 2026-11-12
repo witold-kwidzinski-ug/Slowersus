@@ -5,7 +5,7 @@ import './App.css'
 
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom'
 import Solo from "./Solo/Solo"
-import Main from "./Main/Main"
+import Lobbies from "./Lobbies/Lobbies"
 import Multi from "./Multi/Multi"
 import Users from "./Users/Users"
 import U from "./U/U"
@@ -27,8 +27,8 @@ function App() {
       <Router>
         <Header />
         <Routes>
-          <Route path='/' element={<ProtectedRoute><Solo /></ProtectedRoute>} />
-          <Route path='/main' element={<ProtectedRoute><Main /></ProtectedRoute>} />
+          <Route path='/' element={<Solo />} />
+          <Route path='/lobbies' element={<ProtectedRoute><Lobbies /></ProtectedRoute>} />
           <Route path='/multi/:id' element={<ProtectedRoute><Multi /></ProtectedRoute>} />
           <Route path='/users' element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path='/u/:id' element={<ProtectedRoute><U /></ProtectedRoute>} />

@@ -188,7 +188,7 @@ app.get("/api/ranking", async (req, res) => {
     }
 })
 
-app.delete("/ranking/:id", authenticate, isAdmin, async (req, res) => {
+app.delete("/api/ranking/:id", authenticate, isAdmin, async (req, res) => {
     const id = req.params.id
 
     await DB.query(`DELETE * FROM users WHERE id=$1`, [id])
@@ -196,7 +196,7 @@ app.delete("/ranking/:id", authenticate, isAdmin, async (req, res) => {
     res.json({message: "User has been unbanned from ranking."})
 })
 
-app.post("/ranking/:id", authenticate, isAdmin, async (req, res) => {
+app.post("/api/ranking/:id", authenticate, isAdmin, async (req, res) => {
     const id = req.params.id
 
     await DB.query(`INSERT INTO users (id) VALUES ($1)`, [id])
@@ -221,7 +221,7 @@ app.post("/api/games", (req, res) => {
 })
 
 app.get("/api/games", (req, res) => {
-    res.json(games)
+    res.json(games.map(n => ({gameid, host: n.p1.id})))
 })
 
 
