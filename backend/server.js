@@ -104,39 +104,6 @@ app.get("/api/user/:id", async (req, res) => {
 
 })
 
-// app.delete("/user/:id", (req, res) => {
-//     const id = req.params.id
-//     const acc = accounts.findIndex(n => n.id === id)
-
-//     if (acc) {
-//         accounts.splice(id, 0)
-//         res.send("User successfully deleted.")
-//     } else {
-//         res.send(`No user with id ${id} found.`)
-//     }
-
-// })
-
-// app.put("/result/:id", (req, res) => {
-//     const id = req.params.id
-//     const stats = req.body
-
-//     const acc = accounts.find(n => n.id === id)
-
-//     if (stats.result === "win") {
-//         acc.wins++
-//         acc.points += (7 - stats.wordamount)
-//     } else {
-//         acc.losses++
-//         acc.points -= (7 - stats.enemywordamount)
-//         if (acc.points < 0) acc.points = 0
-//     }
-
-//     res.send("User score changed.")
-
-
-// })
-
 
 app.post("/api/account_sync", authenticate, async (req, res) => {
     try {     
@@ -209,19 +176,20 @@ app.post("/api/ranking/:id", authenticate, isAdmin, async (req, res) => {
 
 //================================GAMES====================================
 
-let games = []
+const games = new Map()
 
 app.post("/api/games", (req, res) => {
 
     const gameid = v4()
-
 
     res.send(gameid)
 
 })
 
 app.get("/api/games", (req, res) => {
-    res.json(games.map(n => ({gameid, host: n.p1.id})))
+    res.json(
+        Array.from(games, ([k, v]) => ({gameid: k, host: v.p1.id}))
+    )
 })
 
 
@@ -230,12 +198,33 @@ app.get("/api/games", (req, res) => {
 const {Server} = require("socket.io")
 const gameSocket = require("./gameSocket.js")
 
-const io = new Server(server, {cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"]
-  }})
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"]
+    },
+    connectionStateRecovery: {
+        maxDisconnectionDuration: 30 * 1000,
+        skipMiddlewares: false
+    }
+})
+
+
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token
+    if (!token) return next(new Error("Unauthorized"))
+
+    try {
+        const public_key = `-----BEGIN PUBLIC KEY-----\n${process.env.PUBLIC_KEY}\n-----END PUBLIC KEY-----`
+
+        const decoded = jwt.verify(token, public_key, {algorithms: ["RS256"]})
+        socket.user = decoded
+        next()
+    } catch (err) {
+        next(new Error("Unauthorized"))
+    }
+})
 
 gameSocket(io, words, games)
-
 
 server.listen(3000, () => console.log("Started express server at http://localhost:3000/"))

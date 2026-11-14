@@ -1,16 +1,44 @@
+const DB = require("./db")
+
+const disconnectTimers = new Map()
+const activeSockets = new Map()
+
 
 function gameSocket(io, words, games) {
     io.on("connection", (socket) => {
+        const pid = socket.user.sub
 
-        socket.on("join_game", ({gameid, pid}) => {
-            console.log(`${gameid}, ${pid}`)
-            socket.join(gameid)
-            socket.pid = pid
-            socket.gameid = gameid
-            const gameinfo = games.find(n => n.gameid === gameid)
+        socket.on("join_game", ({gameid}) => {
+            if (!gameid) {
+                socket.emit("join_failed", {message: "Invalid game ID"})
+                return
+            }
+
+            const gameinfo = games.get(gameid)
+
+
+
+            if (gameinfo && (pid === gameinfo.p1.id || pid === gameinfo.p2.id)) {
+                const timer = disconnectTimers.get(`${gameid}:${pid}`)
+
+                if (timer) {
+                    clearTimeout(timer)
+                    disconnectTimers.delete(`${gameid}:${pid}`)
+                }
+            }
+
+            
+
+            if (gameinfo && pid !== gameinfo.p1.id && pid !== gameinfo.p2.id && gameinfo.status !== "waiting") {
+                socket.emit("join_failed", {message: "Game is currently happening"})
+                return
+            }
+
+
+
+            
             if (!gameinfo) {
                 const g = {
-                    gameid: gameid,
                     p1: {
                         id: pid,
                         guesses: []
@@ -19,48 +47,113 @@ function gameSocket(io, words, games) {
                         id: null,
                         guesses: []
                     },
-                    answer: words[Math.floor(Math.random() * words.length)].toUpperCase()
+                    answer: words[Math.floor(Math.random() * words.length)].toUpperCase(),
+                    status: "waiting"
                 }
-                games.push(g)
-                console.log("p1")
+                games.set(gameid, g)
+                socket.data.pid = pid
+                socket.data.gameid = gameid
+
+                activeSockets.set(`${gameid}:${pid}`, socket.id)
+
+                socket.join(gameid)
                 socket.emit("game_joined", g)
-            } else {
-                console.log("p2")
-                
-                if (!gameinfo.p2.id && pid !== gameinfo.p1.id) {
-                    gameinfo.p2.id = pid
-                }
-
-                console.log(gameinfo.p2.id)
-
-                io.to(gameid).emit("game_joined", gameinfo)
+                return
             }
+            if (pid === gameinfo.p1.id || pid === gameinfo.p2.id) {
+                socket.data.pid = pid
+                socket.data.gameid = gameid
+
+                activeSockets.set(`${gameid}:${pid}`, socket.id)
+
+                socket.join(gameid)
+                socket.emit("game_joined", gameinfo)
+                return
+            }
+
+            if (!gameinfo.p2.id && pid !== gameinfo.p1.id) {
+                gameinfo.p2.id = pid
+                socket.data.pid = pid
+                socket.data.gameid = gameid
+
+                activeSockets.set(`${gameid}:${pid}`, socket.id)
+
+                socket.join(gameid)
+                io.to(gameid).emit("game_joined", gameinfo)
+                return
+            }
+
+            socket.emit("join_failed", {message: "Game is full"})
+
+            
         })
 
         socket.on("start_game", () => {
-            const gameinfo = games.find(n => n.gameid === socket.gameid)
+            const gameinfo = games.get(socket.data.gameid)
+
             if (!gameinfo) return
-            if (!gameinfo.p1.id || !gameinfo.p2.id) return
+            if (socket.data.pid !== gameinfo.p1.id) return
+            if (gameinfo.status !== "waiting") return
+            if (!gameinfo.p2.id) return
+            if (activeSockets.get(`${socket.data.gameid}:${gameinfo.p1.id}`) !== socket.id) return
+            if (!activeSockets.has(`${socket.data.gameid}:${gameinfo.p2.id}`)) return
+
             gameinfo.answer = words[Math.floor(Math.random() * words.length)].toUpperCase()
-            io.to(socket.gameid).emit("start_game")
+            gameinfo.status = "active"
+
+            io.to(socket.data.gameid).emit("start_game")
         })
 
-        socket.on("guess", (word) => {
-            console.log(`${socket.pid}: ${word}`)
-            if (!words.includes(word.toLowerCase())) {
+        socket.on("guess", async (word) => {
+            if (typeof word !== "string" || word.length !== 5 || !words.includes(word.toLowerCase())) {
                 socket.emit("word_failed")
                 return
             }
-            const gameinfo = games.find(n => n.gameid === socket.gameid)
+
+            const gameinfo = games.get(socket.data.gameid)
+
             
-            if (!gameinfo) {
+            if (!gameinfo || gameinfo.status !== "active") {
+                socket.emit("word_failed")
+                return
+            }
+            
+            const key = `${socket.data.gameid}:${socket.data.pid}`
+
+            if (activeSockets.get(key) !== socket.id) {
+                socket.emit("word_failed")
+                return
+            }
+
+
+            if (socket.data.pid !== gameinfo.p1.id && socket.data.pid !== gameinfo.p2.id) {
+                socket.emit("word_failed")
+                return
+            }
+
+            const player = socket.data.pid === gameinfo.p1.id ? gameinfo.p1 : gameinfo.p2
+            const enemy = socket.data.pid === gameinfo.p1.id ? gameinfo.p2 : gameinfo.p1
+
+
+            if (player.guesses.length >= 6) {
                 socket.emit("word_failed")
                 return
             }
 
             if (word === gameinfo.answer) {
-                io.to(socket.gameid).emit("newguess", {pid: socket.pid, final: [...word].map(letter => ({letter, color: "green"}))})
-                io.to(socket.gameid).emit("win", {pid: socket.pid, answer: gameinfo.answer})
+                gameinfo.status = "finishing"
+
+                io.to(socket.data.gameid).emit("newguess", {pid: socket.data.pid, final: [...word].map(letter => ({letter, color: "lime"}))})
+                io.to(socket.data.gameid).emit("win", {pid: socket.data.pid, answer: gameinfo.answer})
+
+                await DB.query(`UPDATE users SET points = points + $1, wins = wins + 1, streak = streak + 1 WHERE id = $2;`, [6 - player.guesses.length, player.id])
+                await DB.query(`UPDATE users SET points = points - $1, losses = losses + 1, streak = 0 WHERE id = $2;`, [6 - enemy.guesses.length, enemy.id])
+                
+                gameinfo.p1.guesses = []
+                gameinfo.p2.guesses = []
+
+                gameinfo.status = "waiting"
+
                 return
             }
 
@@ -97,38 +190,80 @@ function gameSocket(io, words, games) {
 
             }
 
-            gameinfo.p1.id === socket.pid ? gameinfo.p1.guesses.push(final) : gameinfo.p2.guesses.push(final)
-
+            player.guesses.push(final)
+            
             if (gameinfo.p1.guesses.length === 6 && gameinfo.p2.guesses.length === 6) {
-                io.to(socket.gameid).emit("draw", {answer: gameinfo.answer})
+                gameinfo.p1.guesses = []
+                gameinfo.p2.guesses = []
+                gameinfo.status = "waiting"
+                io.to(socket.data.gameid).emit("draw", {answer: gameinfo.answer})
                 return
             }
+
             
-            io.to(socket.gameid).emit("newguess", {pid: socket.pid, final: final})
+            io.to(socket.data.gameid).emit("newguess", {pid: socket.data.pid, final: final})
 
 
 
         })
 
         socket.on("disconnect", () => {
-            const gameinfo = games.find(n => n.gameid === socket.gameid)
-            if (socket.pid === gameinfo.p1.id && gameinfo.p2.id === null) {
-                games = games.filter(n => n.gameid !== gameinfo.gameid)
+            const gameid = socket.data.gameid
+            const gameinfo = games.get(gameid)
+
+            const key = `${gameid}:${socket.data.pid}`
+
+            if (!gameinfo) {
                 return
             }
-            if (socket.pid === gameinfo.p1.id) {
-                gameinfo.p1.id = gameinfo.p2.id
-                gameinfo.p2.id = null
-                socket.send("reset")
-                return
-            }
-            if (socket.pid === gameinfo.p2.id) {
-                gameinfo.p2.id = null
-                socket.send("reset")
+            if (socket.data.pid !== gameinfo.p1.id && socket.data.pid !== gameinfo.p2.id) {
                 return
             }
 
+            if (activeSockets.get(key) !== socket.id) {
+                return
+            }
 
+            activeSockets.delete(key)
+
+            const oldTimer = disconnectTimers.get(key)
+            if (oldTimer) {
+                clearTimeout(oldTimer)
+                disconnectTimers.delete(key)
+            } 
+
+            disconnectTimers.set(key, setTimeout(() => {
+
+                const currentGame = games.get(gameid);
+
+                if (!currentGame) {
+                    disconnectTimers.delete(key)
+                    return
+                } 
+
+                if (activeSockets.has(key)) {
+                    disconnectTimers.delete(key)
+                    return
+                }
+
+                games.delete(gameid)
+
+                io.to(gameid).emit("game_cancelled", {message: "A player has left the game"})
+
+                for (const id of [currentGame.p1.id, currentGame.p2.id]) {
+                    if (!id) continue;
+
+                    const pKey = `${gameid}:${id}`;
+                    const timer = disconnectTimers.get(pKey);
+
+                    if (timer) {
+                        clearTimeout(timer)
+                    }
+
+                    disconnectTimers.delete(pKey);
+                    activeSockets.delete(pKey);
+                }
+            }, 30000))
         })
 
         console.log("connected on backend")

@@ -5,7 +5,6 @@ import keycloak from "../../keycloak"
 
 export default function Keyboard({setLiveGuess, socket}) {
 
-    // const {state} = useUserInfo()
 
     const [guess, setGuess] = useState("")
 

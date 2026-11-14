@@ -17,7 +17,6 @@ export default function Multi() {
     const {id} = useParams()
 
     const socket = useRef(null)
-    const joinedRef = useRef(false)
 
     const isHost = useRef(false)
 
@@ -34,7 +33,13 @@ export default function Multi() {
     useEffect(() => {
         if (!id || !keycloak.tokenParsed.sub) return
 
-        socket.current = io()
+        socket.current = io({
+            auth: (callback) => {
+                callback({
+                    token: keycloak.token
+                });
+            }
+        })
 
         const onStartGame = () => {
             setCanWrite(true)
@@ -44,10 +49,76 @@ export default function Multi() {
         socket.current.on("start_game", onStartGame)
 
         const onGameJoined = (gameinfo) => {
-            setCanStart(keycloak.tokenParsed.sub === gameinfo.p1.id && gameinfo.p2.id !== null)
-            if (keycloak.tokenParsed.sub === gameinfo.p1.id) {
-                isHost.current = true
+            if (gameinfo.status === "active") {
+                if (gameinfo.p1.id === keycloak.tokenParsed.sub) {
+                    setWords(gameinfo.p1.guesses)
+                    setEnemyWords(gameinfo.p2.guesses)
+
+                    setLetters(() => {
+                        let newLetters = {...defaultLetters}
+
+                        gameinfo.p1.guesses.forEach(word => {
+                            newLetters = Object.keys(newLetters).reduce((acc, el) => {
+                                if (!word.find(n => n.letter === el)) {
+                                    return {...acc, [el]: newLetters[el]}
+                                }
+
+                                if (newLetters[el] !== "darkgrey" || newLetters[el] === "lime") {
+                                    return {...acc, [el]: newLetters[el]}
+                                }
+
+                                return {...acc, [el]: word.find(n => n.letter === el).color}
+
+                            }, {})
+                        })
+
+                        return newLetters
+                    })
+
+                }
+                else if (gameinfo.p2.id === keycloak.tokenParsed.sub) {
+                    setWords(gameinfo.p2.guesses)
+                    setEnemyWords(gameinfo.p1.guesses)
+
+                    setLetters(() => {
+                        let newLetters = {...defaultLetters}
+
+                        gameinfo.p2.guesses.forEach(word => {
+                            newLetters = Object.keys(newLetters).reduce((acc, el) => {
+                                if (!word.find(n => n.letter === el)) {
+                                    return {...acc, [el]: newLetters[el]}
+                                }
+
+                                if (newLetters[el] !== "darkgrey" || newLetters[el] === "lime") {
+                                    return {...acc, [el]: newLetters[el]}
+                                }
+
+                                return {...acc, [el]: word.find(n => n.letter === el).color}
+
+                            }, {})
+                        })
+
+                        return newLetters
+                    })
+
+                } else {
+                    return
+                }
+                setCanWrite(true)
+                setCanStart(false)
+                isHost.current = keycloak.tokenParsed.sub === gameinfo.p1.id
+            } else {
+                setCanWrite(false)
+                setWords([])
+                setEnemyWords([])
+                setLetters(defaultLetters)
+                setLiveGuess([])
+                setCanStart(keycloak.tokenParsed.sub === gameinfo.p1.id && gameinfo.p2.id !== null)
+                isHost.current = keycloak.tokenParsed.sub === gameinfo.p1.id
             }
+
+
+
         }
 
         socket.current.on("game_joined", onGameJoined)
@@ -60,7 +131,7 @@ export default function Multi() {
                         return {...acc, [el]: prev[el]}
                     }
 
-                    if (prev[el] !== "darkgrey" || prev[el] === "green") {
+                    if (prev[el] !== "darkgrey" || prev[el] === "lime") {
                         return {...acc, [el]: prev[el]}
                     }
 
@@ -76,10 +147,7 @@ export default function Multi() {
         socket.current.on("newguess", onNewGuess)
 
         const onConnect = () => {
-            if (!joinedRef.current) {
-                socket.current.emit("join_game", {gameid: id, pid: keycloak.tokenParsed.sub})
-                joinedRef.current = true
-            }
+            socket.current.emit("join_game", {gameid: id})
         }
         
         socket.current.on("connect", onConnect)
@@ -92,15 +160,6 @@ export default function Multi() {
                 result = "lose"
                 
             }
-            fetch(`/api/result/${keycloak.tokenParsed.sub}`, {
-                    method: "PUT",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({
-                        result: result,
-                        wordamount: words.length,
-                        enemywordamount: enemyWords.length
-                    })
-                })
 
             setCanWrite(false)
             window.alert(`You ${result}! Answer: ${answer}`)
@@ -141,14 +200,24 @@ export default function Multi() {
 
         socket.current.on("draw", onDraw)
 
+        const onCancelled = ({message}) => {
+            setCanWrite(false)
+            setCanStart(false)
+            console.log(message)
+        }
+
+        socket.current.on("game_cancelled", onCancelled)
+
 
         return () => {
             socket.current.off("start_game", onStartGame)
             socket.current.off("game_joined", onGameJoined)
             socket.current.off("newguess", onNewGuess)
+            socket.current.off("connect", onConnect)
             socket.current.off("win", onWin)
             socket.current.off("reset", onReset)
             socket.current.off("draw", onDraw)
+            socket.current.off("game_cancelled", onCancelled)
             socket.current.disconnect()
         }
 
