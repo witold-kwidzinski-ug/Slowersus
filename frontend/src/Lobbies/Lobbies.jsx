@@ -23,9 +23,9 @@ export default function Lobbies() {
     return (
         <>
             <h1>Game lobbies</h1>
-            <CreateButton />
             <div id="multi">
-                {games.length > 0 && games.map(n => <button onClick={() => navigate(`/multi/${n.gameid}`)} key={`${n.gameid}`}>{n.gameid}</button>)}
+                <CreateButton />
+                {games.length > 0 && games.map(n => <button className="lobbyButton" onClick={() => navigate(`/multi/${n.gameid}`)} key={`${n.gameid}`}><b>{n.host}</b>'s game</button>)}
             </div>
         </>
     )

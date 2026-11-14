@@ -188,7 +188,7 @@ app.post("/api/games", (req, res) => {
 
 app.get("/api/games", (req, res) => {
     res.json(
-        Array.from(games, ([k, v]) => ({gameid: k, host: v.p1.id}))
+        Array.from(games, ([k, v]) => ({gameid: k, host: v.p1.name}))
     )
 })
 

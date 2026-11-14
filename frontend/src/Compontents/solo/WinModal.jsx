@@ -11,8 +11,7 @@ export default function WinModal({isWon, answer, guesses}) {
                     {isWon && <p>Amount of guesses: {guesses}</p>}
                 </div>
                 <div className="buttons_row">
-                    <button>Try again?</button>
-                    <button>See guesses</button>
+                    <button onClick={() => window.location.reload()}>Try again?</button>
                 </div>
             </div>
         </div>

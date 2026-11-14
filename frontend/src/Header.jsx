@@ -12,7 +12,7 @@ export default function Header() {
             <Link to='/'>Solo</Link>
             
 
-            <Link to='/lobbies' id="logo">CompWordle</Link>
+            <Link to='/lobbies' id="logo">Slowersus</Link>
 
             <form onSubmit={(e) => {
                 e.preventDefault()

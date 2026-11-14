@@ -9,7 +9,7 @@ export default function U() {
 
     const {id} = useParams()
 
-    const [info, setInfo] = useState({})
+    const [info, setInfo] = useState(null)
 
     const canEdit = useRef(false)
 
@@ -33,18 +33,25 @@ export default function U() {
 
     return (
         <>
-            <div className="container">
-                <h1>Info</h1>
-                <p>Name: {info.name}</p>
-                <p>Bio: {info.bio}</p>
-            </div>
+            {info !== null && <div className="container" style={{backgroundColor: `rgb(255, ${255 - Math.round((info.wins / (info.wins + info.losses)) * 255)}, 0)`}}>
+                <div>
+                    <h1>{info.name}</h1>
+                    {info.bio.length !== 0 ? <p className="info">{info.bio}</p> : <p className="info">This user's bio is empty.</p>}
+                </div>
+            
+                <div className="info">
+                    <h3><b>{info.points}</b> points</h3>
+                    <p>🎯 <b>{Math.round(info.wins / (info.wins + info.losses) * 10000) / 100}%</b> win rate </p>
+                    <p>🏆 Wins: {info.wins}</p>
+                    <p>💀 Losses: {info.losses}</p>
+                    <p>🔥 Win streak: {info.streak}</p>
 
-            <div className="container">
-                <h1>Stats</h1>
-                <p>Points: {info.points}</p>
-                <p>W/L: {Math.round(info.wins / (info.wins + info.losses) * 10000) / 100}% </p>
-                <p>Wins: {info.wins} | Losses: {info.losses}</p>
-            </div>
+                </div>
+                
+            </div>}
+            
+            
+            {/* w przypadku implementacji usuwania kont
             
             <button onClick={() => {
                 if (window.confirm("Are you sure you want to delete the account?")) {
@@ -52,7 +59,7 @@ export default function U() {
                     keycloak.clearToken()
                     navigate("/")
                 }
-            }}>Delete</button>
+            }}>Delete</button> */}
             
         
         </>

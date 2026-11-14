@@ -18,9 +18,6 @@ import ProtectedRoute from './ProtectedRoute'
 
 function App() {
 
-  // const {state} = useUserInfo()
-
-
   return (
     <>
       

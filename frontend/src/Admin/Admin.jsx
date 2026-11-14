@@ -5,7 +5,6 @@ export default function Admin() {
 
     const [isAdmin, setIsAdmin] = useState(false)
 
-    // const {state} = useUserInfo()
 
     useEffect(() => {
         if (keycloak.tokenParsed.realm_access.roles.includes("ADMIN")) {

@@ -1,5 +1,40 @@
 #multi {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
+}
+
+h1 {
+    justify-self: center;
+}
+
+.lobbyButton {
+    color: black;
+    width: 20vw;
+    height: 2vw;
+    background-color: rgb(188, 255, 188);
+    border: 0px;
+    border-radius: 5px;
+    margin: 2px;
+}
+
+.createLobby {
+    color: black;
+    width: 40vw;
+    height: 4vw;
+    background-color: rgb(141, 255, 141);
+    font-size: larger;
+    border: 0px;
+    border-radius: 20px;
+    margin: 20px;
+}
+
+button {
+    transition: transform 0.3s;
+    transform: scale(1);
+}
+
+button:hover {
+    transform: scale(1.05);
+    cursor: pointer;
 }

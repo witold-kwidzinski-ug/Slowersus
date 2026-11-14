@@ -22,6 +22,6 @@ export default function CreateButton() {
     }
 
     return (
-        <button onClick={handleNewGame}>Create Game</button>
+        <button className="createLobby" onClick={handleNewGame}>Create Game</button>
     )
 }

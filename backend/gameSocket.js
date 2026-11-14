@@ -41,10 +41,12 @@ function gameSocket(io, words, games) {
                 const g = {
                     p1: {
                         id: pid,
+                        name: socket.user.preferred_username,
                         guesses: []
                     },
                     p2: {
                         id: null,
+                        name: null,
                         guesses: []
                     },
                     answer: words[Math.floor(Math.random() * words.length)].toUpperCase(),
@@ -73,6 +75,7 @@ function gameSocket(io, words, games) {
 
             if (!gameinfo.p2.id && pid !== gameinfo.p1.id) {
                 gameinfo.p2.id = pid
+                gameinfo.p2.name = socket.user.preferred_username
                 socket.data.pid = pid
                 socket.data.gameid = gameid
 

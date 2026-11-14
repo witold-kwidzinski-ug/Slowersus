@@ -11,6 +11,8 @@ import Keyboard from "../Compontents/multi/Keyboard"
 
 import "./multi.css"
 import keycloak from "../keycloak"
+import CancelledModal from "../Compontents/multi/CancelledModal"
+import ResultModal from "../Compontents/multi/ResultModal"
 
 export default function Multi() {
 
@@ -22,6 +24,10 @@ export default function Multi() {
 
     const [canWrite, setCanWrite] = useState(false)
     const [canStart, setCanStart] = useState(false)
+
+    const [isCancelled, setIsCancelled] = useState(false)
+    const [isOver, setIsOver] = useState(false)
+    const [message, setMessage] = useState("")
 
 
     const [words, setWords] = useState([])
@@ -153,19 +159,15 @@ export default function Multi() {
         socket.current.on("connect", onConnect)
 
         const onWin = ({pid, answer}) => {
-            let result
-            if (keycloak.tokenParsed.sub === pid) {
-                result = "win"
-            } else {
-                result = "lose"
-                
-            }
+            const result = keycloak.tokenParsed.sub === pid ? "win" : "lose"
 
             setCanWrite(false)
-            window.alert(`You ${result}! Answer: ${answer}`)
             if (isHost.current) {
                 setCanStart(true)
             }
+            setIsOver(true)
+            setMessage(`You ${result}! Answer: ${answer}`)
+
             setWords([])
             setLetters(defaultLetters)
             setEnemyWords([])
@@ -188,7 +190,10 @@ export default function Multi() {
 
         const onDraw = ({answer}) => {
             setCanWrite(false)
-            window.alert(`Draw! | Answer: ${answer}`)
+            
+            setIsOver(true)
+            setMessage(`Draw! Answer: ${answer}`)
+
             setWords([])
             setLetters(defaultLetters)
             setEnemyWords([])
@@ -203,7 +208,7 @@ export default function Multi() {
         const onCancelled = ({message}) => {
             setCanWrite(false)
             setCanStart(false)
-            console.log(message)
+            setIsCancelled(true)
         }
 
         socket.current.on("game_cancelled", onCancelled)
@@ -226,7 +231,9 @@ export default function Multi() {
 
     return (
         <>
-            {canStart && !canWrite && <button onClick={() => socket.current.emit("start_game")}>lol</button>}
+            {isCancelled && <CancelledModal />}
+            {isOver && <ResultModal message={message} setIsOver={setIsOver} />}
+            {canStart && !canWrite && <button  onClick={() => socket.current.emit("start_game")}>Start game</button>}
             <div id="gameview">
                 <div>
                     <P1WordView words={words} liveGuess={liveGuess} />
