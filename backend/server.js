@@ -42,7 +42,7 @@ function authenticate(req, res, next) {
 }
 
 function isAdmin(req, res, next) {
-    const roles = req.decoded.realm_access.roles || [];
+    const roles = req.decoded.realm_access?.roles || [];
     if (roles.includes("ADMIN")) {
         next()
     } else {
@@ -50,8 +50,36 @@ function isAdmin(req, res, next) {
     }
 }
 
+async function getKeycloakAdminToken() {
+    const params = new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: process.env.KC_CLIENT_ID,
+        client_secret: process.env.KC_CLIENT_SECRET
+    })
+
+    const res = await fetch(
+        `${process.env.KC_URL}/realms/${process.env.KC_REALM}/protocol/openid-connect/token`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params
+        }
+    )
+
+    if (!res.ok) {
+        throw new Error("Failed to acquire Keycloak admin token")
+    }
+
+    const data = await res.json()
+    return data.access_token
+}
 
 
+
+
+//==============================ENDPOINTS==================================
 
 app.get("/api", (req, res) => {
     console.log("super!")
@@ -104,6 +132,41 @@ app.get("/api/user/:id", async (req, res) => {
 
 })
 
+app.delete("/api/user/:id", authenticate, async (req, res) => {
+    try {
+        const sub = req.decoded.sub
+
+        if (sub !== req.params.id && !req.decoded.realm_access?.roles.includes("ADMIN")) {
+            res.status(403).json({"message": "Forbidden from deleting the account."})
+            return
+        }
+
+        const token = await getKeycloakAdminToken()
+
+        const response = await fetch(`${process.env.KC_URL}/admin/realms/${process.env.KC_REALM}/users/${req.params.id}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+
+        if (!response.ok && response.status !== 404) {
+            throw new Error("Keycloak account deletion failed")
+        }
+
+        await DB.query(`DELETE FROM users WHERE id=$1`, [req.params.id])
+        await DB.query(`DELETE FROM blacklisted_ids WHERE id=$1`, [req.params.id])
+
+        return res.status(200).json({message: "Account successfully deleted."})
+
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({message: "Account deletion failed."})
+    }
+
+})
+
+
 
 app.post("/api/account_sync", authenticate, async (req, res) => {
     try {     
@@ -137,17 +200,34 @@ app.get("/api/ranking", async (req, res) => {
     const top = Number(req.query["top"])
 
     try {
-        const rankings = await DB.query(`SELECT * FROM users ORDER BY points LIMIT $1;`, [top])
-
-        const blacklisted_ids = await DB.query(`SELECT * FROM blacklisted_ids;`)
-
-        const r = rankings.rows.filter(n => !blacklisted_ids.rows.includes(n.id)).sort((a,b) => b.points - a.points)
+        let rankings = []
 
         if (!isNaN(top) && top > 0) {
-            res.json(r)
+            rankings = await DB.query(`
+                SELECT u.*
+                FROM users u
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM blacklisted_ids b
+                    WHERE b.id = u.id
+                )
+                ORDER BY u.points DESC
+                LIMIT $1;
+            `, [top])
         } else {
-            res.json(rankings.rows)
+            rankings = await DB.query(`
+                SELECT u.*
+                FROM users u
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM blacklisted_ids b
+                    WHERE b.id = u.id
+                )
+                ORDER BY u.points DESC;
+            `)
         }
+
+        res.json(rankings.rows.filter(n => n.wins + n.losses > 0))
     
     } catch (err) {
         console.error(err)
@@ -156,19 +236,29 @@ app.get("/api/ranking", async (req, res) => {
 })
 
 app.delete("/api/ranking/:id", authenticate, isAdmin, async (req, res) => {
-    const id = req.params.id
+    try {
+        const id = req.params.id
 
-    await DB.query(`DELETE * FROM users WHERE id=$1`, [id])
+        await DB.query(`DELETE FROM blacklisted_ids WHERE id=$1`, [id])
 
-    res.json({message: "User has been unbanned from ranking."})
+        res.json({message: "User has been unbanned from ranking."})
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ message: "Database error." })
+    }
 })
 
 app.post("/api/ranking/:id", authenticate, isAdmin, async (req, res) => {
-    const id = req.params.id
+    try {
+        const id = req.params.id
 
-    await DB.query(`INSERT INTO users (id) VALUES ($1)`, [id])
+        await DB.query(`INSERT INTO blacklisted_ids (id) VALUES ($1) ON CONFLICT (id) DO NOTHING`, [id])
 
-    res.json({message: "User successfully banned from ranking."})
+        res.json({message: "User successfully banned from ranking."})
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ message: "Database error." })
+    }
 
 })
 

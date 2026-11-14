@@ -20,10 +20,16 @@ export default function Admin() {
         <form onSubmit={e => {
             e.preventDefault()
             if (e.target.type.value === "ban") {
-                fetch(`/api/ranking/${e.target.id.value}`, {method: "DELETE"})
+                fetch(`/api/ranking/${e.target.id.value}`, {method: "POST", headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${keycloak.token}`
+                }})
             }
             if (e.target.type.value === "unban") {
-                fetch(`/api/ranking/${e.target.id.value}`, {method: "POST"})
+                fetch(`/api/ranking/${e.target.id.value}`, {method: "DELETE", headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${keycloak.token}`
+                }})
             }
         }}>
             <input type="text" name="id"></input>

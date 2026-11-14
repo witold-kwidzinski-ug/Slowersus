@@ -21,6 +21,8 @@ export default function Header() {
                 <input id="usersearch" placeholder="Search user" type='text' name='search_name'></input>
             </form>
 
+            {keycloak.authenticated && keycloak.tokenParsed.realm_access?.roles.includes("ADMIN") && <Link to='/admin'>Admin panel</Link>}
+
             <div>
                 {keycloak.authenticated && <Link to={`/u/${keycloak.tokenParsed.sub}`}>{keycloak.tokenParsed.preferred_username}</Link>}
 

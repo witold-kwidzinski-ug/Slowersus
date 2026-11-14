@@ -41,7 +41,7 @@ export default function U() {
             
                 <div className="info">
                     <h3><b>{info.points}</b> points</h3>
-                    <p>🎯 <b>{Math.round(info.wins / (info.wins + info.losses) * 10000) / 100}%</b> win rate </p>
+                    <p>🎯 <b>{info.wins + info.losses > 0 ? Math.round(info.wins / (info.wins + info.losses) * 10000) / 100 : 0}%</b> win rate </p>
                     <p>🏆 Wins: {info.wins}</p>
                     <p>💀 Losses: {info.losses}</p>
                     <p>🔥 Win streak: {info.streak}</p>
@@ -51,15 +51,24 @@ export default function U() {
             </div>}
             
             
-            {/* w przypadku implementacji usuwania kont
             
-            <button onClick={() => {
+            
+            {(keycloak.tokenParsed.sub === id || keycloak.tokenParsed.realm_access?.roles.includes("ADMIN")) && <button onClick={async () => {
                 if (window.confirm("Are you sure you want to delete the account?")) {
-                    fetch(`/api/user/${keycloak.tokenParsed.sub}`, {method: "DELETE"})
-                    keycloak.clearToken()
-                    navigate("/")
+                    try {
+                        await fetch(`/api/user/${id}`, {method: "DELETE", headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${keycloak.token}`
+                        }})
+                        if (keycloak.tokenParsed.sub === id) {
+                            keycloak.logout()
+                        }
+                        navigate("/")
+                    } catch (err) {
+                        console.log(err)
+                    }
                 }
-            }}>Delete</button> */}
+            }}>Delete</button>}
             
         
         </>

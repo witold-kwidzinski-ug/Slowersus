@@ -48,6 +48,11 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - PUBLIC_KEY=${PUBLIC_KEY}
+
+      - KC_CLIENT_SECRET=${KC_CLIENT_SECRET}
+      - KC_CLIENT_ID=${KC_CLIENT_ID}
+      - KC_REALM=${KC_REALM}
+      - KC_URL=${KC_URL}
     networks:
       - db-net
       - backend-net
@@ -56,6 +61,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      keycloak:
+        condition: service_started
 
 
 

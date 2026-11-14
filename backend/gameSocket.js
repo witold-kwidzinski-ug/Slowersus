@@ -144,18 +144,25 @@ function gameSocket(io, words, games) {
             }
 
             if (word === gameinfo.answer) {
-                gameinfo.status = "finishing"
+                try {
+                    gameinfo.status = "finishing"
 
-                io.to(socket.data.gameid).emit("newguess", {pid: socket.data.pid, final: [...word].map(letter => ({letter, color: "lime"}))})
-                io.to(socket.data.gameid).emit("win", {pid: socket.data.pid, answer: gameinfo.answer})
-
-                await DB.query(`UPDATE users SET points = points + $1, wins = wins + 1, streak = streak + 1 WHERE id = $2;`, [6 - player.guesses.length, player.id])
-                await DB.query(`UPDATE users SET points = points - $1, losses = losses + 1, streak = 0 WHERE id = $2;`, [6 - enemy.guesses.length, enemy.id])
-                
-                gameinfo.p1.guesses = []
-                gameinfo.p2.guesses = []
-
-                gameinfo.status = "waiting"
+                    io.to(socket.data.gameid).emit("newguess", {pid: socket.data.pid, final: [...word].map(letter => ({letter, color: "lime"}))})
+                    
+                    await DB.query(`UPDATE users SET points = points + $1, wins = wins + 1, streak = streak + 1 WHERE id = $2;`, [6 - player.guesses.length, player.id])
+                    await DB.query(`UPDATE users SET points = points - $1, losses = losses + 1, streak = 0 WHERE id = $2;`, [6 - enemy.guesses.length, enemy.id])
+                    
+                    gameinfo.p1.guesses = []
+                    gameinfo.p2.guesses = []
+                    
+                    gameinfo.status = "waiting"
+                    
+                    io.to(socket.data.gameid).emit("win", {pid: socket.data.pid, answer: gameinfo.answer})
+                } catch (err) {
+                    console.error("Failed to save game results:", err)
+                    gameinfo.status = "active"
+                    socket.emit("word_failed")
+                }
 
                 return
             }
@@ -251,7 +258,11 @@ function gameSocket(io, words, games) {
 
                 games.delete(gameid)
 
-                io.to(gameid).emit("game_cancelled", {message: "A player has left the game"})
+                if (currentGame.p2.id) {
+                    io.to(gameid).emit("game_cancelled", {
+                        message: "A player has left the game"
+                    })
+                }
 
                 for (const id of [currentGame.p1.id, currentGame.p2.id]) {
                     if (!id) continue;
