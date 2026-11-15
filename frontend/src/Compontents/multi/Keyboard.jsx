@@ -59,7 +59,6 @@ export default function Keyboard({setLiveGuess, socket}) {
         socket.current.on("newguess", fn)
 
         const fn2 = () => {
-            console.log("wrong guess")
             setTimeout(() => {canSubmit.current = true}, 1000)
             
         }

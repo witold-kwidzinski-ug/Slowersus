@@ -10,8 +10,6 @@ services:
       - "${PWD}/init.sql:/docker-entrypoint-initdb.d/init.sql"
     networks:
       - db-net
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 5s
@@ -56,14 +54,21 @@ services:
     networks:
       - db-net
       - backend-net
-    ports: 
-    - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
       keycloak:
         condition: service_started
 
+  frontend:
+    build: ./frontend
+    networks:
+      - backend-net
+    ports:
+    - "80:80"
+    depends_on:
+      backend:
+        condition: service_started
 
 
 volumes:

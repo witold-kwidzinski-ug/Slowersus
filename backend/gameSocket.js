@@ -159,7 +159,6 @@ function gameSocket(io, words, games) {
                     
                     io.to(socket.data.gameid).emit("win", {pid: socket.data.pid, answer: gameinfo.answer})
                 } catch (err) {
-                    console.error("Failed to save game results:", err)
                     gameinfo.status = "active"
                     socket.emit("word_failed")
                 }
@@ -280,7 +279,6 @@ function gameSocket(io, words, games) {
             }, 30000))
         })
 
-        console.log("connected on backend")
     })
     
 }

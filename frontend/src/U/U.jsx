@@ -21,7 +21,6 @@ export default function U() {
         }
         async function getInfo() {
             const d = await fetch(`/api/user/${id}`).then(o => o.json())
-            console.log(d)
             setInfo(d)
         }
 

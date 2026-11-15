@@ -30,8 +30,6 @@ export default function Solo() {
     function isGuessed() {
         return words.length !== 0 && words[words.length-1].reduce((acc, el) => el.color === "lime" ? acc + 1 : acc, 0) === 5
     }
-    console.log(isGuessed())
-    console.log(answer)
 
     return (
         <>

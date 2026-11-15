@@ -27,7 +27,6 @@ async function initialize() {
       console.error("Account sync error:", res.status, error);
     } else {
       const data = await res.json();
-      console.log("Profil użytkownika:", data);
     }
 
   }
